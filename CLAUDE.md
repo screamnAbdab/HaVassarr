@@ -13,11 +13,17 @@ There is no build step, test suite, or local dev server — this is a HA integra
 All logic lives in four files under `custom_components/havassarr/`:
 
 - **`const.py`** — domain name and service name constants
-- **`__init__.py`** — registers HA services (`havassarr.add_radarr_movie`, `havassarr.add_sonarr_tv_show`) and wires config entry data into `hass.data[DOMAIN]`
+- **`__init__.py`** — registers four HA services; starts background polling tasks after a successful add; fires `havassarr_status_update` events on state transitions; cancels tasks on unload
 - **`config_flow.py`** — multi-step UI config flow; user supplies Radarr & Sonarr URLs/API keys, then selects quality profiles fetched from the live APIs
-- **`services.py`** — synchronous HTTP logic using `requests`; `handle_add_media` searches `api/v3/<type>/lookup`, picks the first result, and POSTs to `api/v3/<type>`
+- **`services.py`** — synchronous HTTP logic using `requests` (runs via `async_add_executor_job`); `handle_add_media` searches `api/v3/<type>/lookup`, picks first result, POSTs to `api/v3/<type>`, returns internal ID; `handle_get_status` checks queue and library for on-demand status
 
-Config entry data stored in `hass.data[DOMAIN]` holds the URLs, API keys, and quality profile IDs — services read directly from there.
+**Four services:**
+- `havassarr.add_radarr_movie` / `havassarr.add_sonarr_tv_show` — add media, start background polling
+- `havassarr.get_radarr_movie_status` / `havassarr.get_sonarr_tv_show_status` — on-demand status check
+
+**Background polling:** after each add, a `_poll_status` asyncio task (using `aiohttp`) polls every 60s and fires `havassarr_status_update` events (`searching → downloading → completed/failed`). Tasks are stored in `hass.data[DOMAIN]["polling_tasks"]` and cancelled on `async_unload_entry`.
+
+Config entry data stored in `hass.data[DOMAIN]` holds the URLs, API keys, quality profile IDs, and `polling_tasks` set — services read directly from there.
 
 `services.yaml` declares the service schemas for the HA UI.
 
