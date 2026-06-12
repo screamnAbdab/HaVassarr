@@ -1,0 +1,11 @@
+{
+  "domain": "havassarr",
+  "name": "HaVassarr",
+  "version": "0.2.0",
+  "documentation": "https://github.com/screamnAbdab/Havassarr",
+  "issue_tracker": "https://github.com/screamnAbdab/Havassarr/issues",
+  "requirements": [],
+  "dependencies": [],
+  "codeowners": ["@screamnAbdab"],
+  "config_flow": true
+}
